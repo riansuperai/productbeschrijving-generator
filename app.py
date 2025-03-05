@@ -11,8 +11,8 @@ st.title("Agung Super AI - Product Description Generator")
 # Prompt invoeren
 user_prompt = st.text_area("Voer hier je prompt in")
 
-# Excel-bestand uploaden
-uploaded_file = st.file_uploader("Upload een Excel-bestand", type=["xlsx", "xls"])
+# Bestand uploaden (Excel of CSV)
+uploaded_file = st.file_uploader("Upload een Excel- of CSV-bestand", type=["xlsx", "xls", "csv"])
 
 # Functie om productbeschrijving te genereren
 def generate_description(product_info, prompt):
@@ -28,12 +28,16 @@ def generate_description(product_info, prompt):
     return response.choices[0].message.content.strip()
 
 if uploaded_file and openai.api_key and user_prompt:
-    df = pd.read_excel(uploaded_file)
+    # Bepaal bestandstype en lees het in als DataFrame
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
 
     if st.button("Genereer Beschrijvingen"):
         df["Productbeschrijving"] = df.apply(lambda row: generate_description(row.to_dict(), user_prompt), axis=1)
         
-        # Excel met nieuwe kolom downloaden
+        # Download de resultaten als CSV
         st.download_button(
             label="Download resultaten",
             data=df.to_csv(index=False).encode("utf-8"),
