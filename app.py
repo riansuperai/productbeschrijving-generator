@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 import openai
+import os
 
-# Set your OpenAI API key here
-openai.api_key = "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"
+# API-key ophalen uit Streamlit secrets
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Streamlit UI
 st.title("Agung Super AI - Product Description Generator")
 
 # Prompt invoeren
@@ -27,10 +27,9 @@ def generate_description(product_info, prompt):
     )
     return response.choices[0].message.content.strip()
 
-if uploaded_file and user_prompt:
-    # Dataframe inlezen
+if uploaded_file and openai.api_key and user_prompt:
     df = pd.read_excel(uploaded_file)
-    
+
     if st.button("Genereer Beschrijvingen"):
         df["Productbeschrijving"] = df.apply(lambda row: generate_description(row.to_dict(), user_prompt), axis=1)
         
