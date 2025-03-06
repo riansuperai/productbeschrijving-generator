@@ -66,7 +66,7 @@ style_choice = st.selectbox(text["style_label"], style_options)
 # Functie om productbeschrijving te genereren
 def generate_description(product_info, prompt, language, style):
     response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "Je bent een behulpzame AI die productbeschrijvingen genereert."},
             {"role": "user", "content": f"Taal: {language}, Stijl: {style}"},
