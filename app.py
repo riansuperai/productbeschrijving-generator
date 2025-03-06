@@ -46,12 +46,26 @@ def get_translations(language):
 # Functie om OpenAI API-tegoed op te vragen
 def get_api_credits():
     try:
-        response = requests.get("https://api.openai.com/v1/dashboard/billing/subscription",
-                                headers={"Authorization": f"Bearer {openai.api_key}"})
-        if response.status_code == 200:
-            credits = response.json().get("hard_limit_usd", "Onbekend")
-            return f"{credits} USD"
-        return "Fout bij ophalen van API-tegoed"
+        headers = {"Authorization": f"Bearer {openai.api_key}"}
+        
+        # Vraag de factureringslimiet op
+        response = requests.get("https://api.openai.com/v1/dashboard/billing/subscription", headers=headers)
+        if response.status_code != 200:
+            return "Fout bij ophalen van API-tegoed"
+        billing_data = response.json()
+        total_credits = billing_data.get("hard_limit_usd", "Onbekend")
+        
+        # Vraag het huidige verbruik op
+        response_usage = requests.get("https://api.openai.com/v1/dashboard/billing/usage", headers=headers)
+        if response_usage.status_code != 200:
+            return f"{total_credits} USD (verbruik onbekend)"
+        
+        usage_data = response_usage.json()
+        total_used = usage_data.get("total_usage", 0) / 100  # OpenAI geeft dit in centen
+        
+        # Bereken resterend tegoed
+        remaining_credits = total_credits - total_used
+        return f"{remaining_credits:.2f} USD beschikbaar"
     except Exception as e:
         return "Kon API-tegoed niet ophalen"
 
