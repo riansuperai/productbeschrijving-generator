@@ -3,6 +3,9 @@ import pandas as pd
 import openai
 import os
 
+# Initialize OpenAI client
+client = openai.OpenAI()
+
 def get_translations(language):
     translations = {
         "English": {
@@ -65,8 +68,8 @@ style_choice = st.selectbox(text["style_label"], style_options)
 
 # Functie om productbeschrijving te genereren
 def generate_description(product_info, prompt, language, style):
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # Updated to use GPT-4
+    response = client.chat.completions.create(
+        model="gpt-4",  # Ensure GPT-4 is being used
         messages=[
             {"role": "system", "content": "Je bent een behulpzame AI die productbeschrijvingen genereert."},
             {"role": "user", "content": f"Taal: {language}, Stijl: {style}"},
