@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import openai
 import os
-import requests
 import tiktoken
 
 # Initialize OpenAI client
@@ -22,8 +21,7 @@ def get_translations(language):
             "input_option": "Manual input",
             "progress_message": "Generating descriptions... Please wait...",
             "result_label": "Generated description",
-            "token_usage": "Tokens Used",
-            "api_credit": "Available API Credits"
+            "token_usage": "Tokens Used"
         },
         "Nederlands": {
             "title": "Agung Super AI - Productbeschrijving Generator",
@@ -37,37 +35,10 @@ def get_translations(language):
             "input_option": "Handmatige invoer",
             "progress_message": "Beschrijvingen worden gegenereerd... Even geduld...",
             "result_label": "Gegenereerde beschrijving",
-            "token_usage": "Gebruikte tokens",
-            "api_credit": "Beschikbare API-credits"
+            "token_usage": "Gebruikte tokens"
         }
     }
     return translations[language]
-
-# Functie om OpenAI API-tegoed op te vragen
-def get_api_credits():
-    try:
-        headers = {"Authorization": f"Bearer {openai.api_key}"}
-        
-        # Vraag de factureringslimiet op
-        response = requests.get("https://api.openai.com/v1/dashboard/billing/subscription", headers=headers)
-        if response.status_code != 200:
-            return "Fout bij ophalen van API-tegoed"
-        billing_data = response.json()
-        total_credits = billing_data.get("hard_limit_usd", "Onbekend")
-        
-        # Vraag het huidige verbruik op
-        response_usage = requests.get("https://api.openai.com/v1/dashboard/billing/usage", headers=headers)
-        if response_usage.status_code != 200:
-            return f"{total_credits} USD (verbruik onbekend)"
-        
-        usage_data = response_usage.json()
-        total_used = usage_data.get("total_usage", 0) / 100  # OpenAI geeft dit in centen
-        
-        # Bereken resterend tegoed
-        remaining_credits = total_credits - total_used
-        return f"{remaining_credits:.2f} USD beschikbaar"
-    except Exception as e:
-        return "Kon API-tegoed niet ophalen"
 
 # Functie om tokens te tellen
 def count_tokens(text, model="gpt-4"):
@@ -79,9 +50,6 @@ language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nede
 text = get_translations(language)
 
 st.title(text["title"])
-
-# Toon API-credit overzicht en tokengebruik
-st.sidebar.markdown(f"**{text['api_credit']}:** {get_api_credits()}")
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
