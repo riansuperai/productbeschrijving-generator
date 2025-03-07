@@ -147,3 +147,10 @@ style_choice = st.selectbox(text["style_label"], text["style_options"])
 
 # File upload
 uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
+
+# Generate button for manual input
+if input_method == text["input_option"] and user_prompt:
+    if st.button(text["generate_button"]):
+        with st.spinner(text["progress_message"]):
+            generated_description = "Sample generated text based on input."  # Replace with actual AI call
+        st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
