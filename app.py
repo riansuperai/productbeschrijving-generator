@@ -10,7 +10,7 @@ client = openai.OpenAI()
 def get_translations(language):
     translations = {
         "English": {
-            "title": "Agung Super AI - Product Description Generator",
+            "title": "SaniSuper AI - Product Description Generator",
             "prompt_label": "Enter your prompt",
             "upload_label": "Upload a file (CSV or Excel)",
             "generate_button": "Generate Descriptions",
@@ -25,7 +25,7 @@ def get_translations(language):
             "model_label": "Choose AI Model"
         },
         "Nederlands": {
-            "title": "Agung Super AI - Productbeschrijving Generator",
+            "title": "SaniSuper AI - Productbeschrijving Generator",
             "prompt_label": "Voer hier je prompt in",
             "upload_label": "Upload een bestand (CSV of Excel)",
             "generate_button": "Genereer Beschrijvingen",
