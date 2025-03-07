@@ -55,8 +55,8 @@ def count_tokens(text, model="gpt-3.5-turbo"):
 def clean_text(text):
     return text.encode('utf-8', 'ignore').decode('utf-8')
 
-def convert_html_to_text(html_text):
-    return html.unescape(html_text).replace("\n", " ")
+def convert_html_to_markdown(html_text):
+    return html.unescape(html_text).replace("\n", "\n\n")
 
 # Interface language selection
 language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nederlands"])
@@ -125,10 +125,11 @@ if input_method == text["file_option"]:
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
             
-            # Toon de eerste 5 gegenereerde beschrijvingen in een grotere output-sectie
+            # Toon de eerste 5 gegenereerde beschrijvingen met markdown-opmaak
             st.subheader(text["output_label"])
-            preview_text = "\n\n".join(df["Productbeschrijving"].head().apply(convert_html_to_text))
-            st.text_area("", preview_text, height=300)
+            for desc in df["Productbeschrijving"].head():
+                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
+                st.markdown("---")
             
             # Excel met nieuwe kolom downloaden
             st.download_button(
@@ -142,5 +143,5 @@ else:
     if st.button(text["generate_button"]):
         with st.spinner(text["progress_message"]):
             generated_description, token_usage = generate_description(user_input, user_prompt, output_language, style_choice, model_choice, temperature)
-        st.text_area(text["result_label"], generated_description, height=200)
+        st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
         st.sidebar.markdown(f"**{text['token_usage']}:** {token_usage}")
