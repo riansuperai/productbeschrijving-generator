@@ -144,3 +144,6 @@ output_language = st.selectbox(text["language_label"], ["Nederlands", "English",
 
 # Style selection
 style_choice = st.selectbox(text["style_label"], text["style_options"])
+
+# File upload
+uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
