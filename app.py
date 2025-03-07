@@ -21,7 +21,8 @@ def get_translations(language):
             "input_option": "Manual input",
             "progress_message": "Generating descriptions... Please wait...",
             "result_label": "Generated description",
-            "token_usage": "Tokens Used"
+            "token_usage": "Tokens Used",
+            "model_label": "Choose AI Model"
         },
         "Nederlands": {
             "title": "Agung Super AI - Productbeschrijving Generator",
@@ -35,13 +36,14 @@ def get_translations(language):
             "input_option": "Handmatige invoer",
             "progress_message": "Beschrijvingen worden gegenereerd... Even geduld...",
             "result_label": "Gegenereerde beschrijving",
-            "token_usage": "Gebruikte tokens"
+            "token_usage": "Gebruikte tokens",
+            "model_label": "Kies AI-model"
         }
     }
     return translations[language]
 
 # Functie om tokens te tellen
-def count_tokens(text, model="gpt-4"):
+def count_tokens(text, model="gpt-3.5-turbo"):
     encoding = tiktoken.encoding_for_model(model)
     return len(encoding.encode(text))
 
@@ -50,6 +52,9 @@ language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nede
 text = get_translations(language)
 
 st.title(text["title"])
+
+# AI Model selection
+model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4"])
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -75,18 +80,19 @@ style_options = [
 style_choice = st.selectbox(text["style_label"], style_options)
 
 # Functie om productbeschrijving te genereren
-def generate_description(product_info, prompt, language, style):
+
+def generate_description(product_info, prompt, language, style, model):
     response = client.chat.completions.create(
-        model="gpt-4",  # Ensure GPT-4 is being used
+        model=model,  # Gebruik het geselecteerde model
         messages=[
-            {"role": "system", "content": "Je bent een behulpzame AI die productbeschrijvingen genereert."},
+            {"role": "system", "content": "Je bent een AI die productbeschrijvingen genereert."},
             {"role": "user", "content": f"Taal: {language}, Stijl: {style}"},
             {"role": "user", "content": prompt},
             {"role": "user", "content": str(product_info)}
         ],
         temperature=0.7
     )
-    token_usage = count_tokens(str(product_info) + prompt + language + style)
+    token_usage = count_tokens(str(product_info) + prompt + language + style, model)
     return response.choices[0].message.content.strip(), token_usage
 
 if input_method == text["file_option"]:
@@ -97,7 +103,7 @@ if input_method == text["file_option"]:
 
         if st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice), axis=1)
+                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice), axis=1)
                 df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
             
             # Toon tokengebruik
@@ -115,6 +121,6 @@ else:
     user_input = st.text_area("Voer productdetails in")
     if st.button(text["generate_button"]):
         with st.spinner(text["progress_message"]):
-            generated_description, token_usage = generate_description(user_input, user_prompt, output_language, style_choice)
+            generated_description, token_usage = generate_description(user_input, user_prompt, output_language, style_choice, model_choice)
         st.text_area(text["result_label"], generated_description, height=200)
         st.sidebar.markdown(f"**{text['token_usage']}:** {token_usage}")
