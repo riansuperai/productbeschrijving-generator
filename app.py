@@ -27,7 +27,15 @@ def get_translations(language):
             "temperature_label": "Set AI Creativity (Temperature)",
             "output_label": "Generated Descriptions Preview",
             "upload_prompt_label": "Upload a prompt file (TXT)",
-            "load_last_prompt": "Load last used prompt"
+            "load_last_prompt": "Load last used prompt",
+            "style_options": [
+                "Personal and friendly",
+                "Urgent and important",
+                "Quirky and bold",
+                "Informative and service-oriented",
+                "Humorous",
+                "Persuasive"
+            ]
         },
         "Nederlands": {
             "title": "Rian SuperAI PDG",
@@ -46,7 +54,15 @@ def get_translations(language):
             "temperature_label": "Stel AI Creativiteit in (Temperature)",
             "output_label": "Gegenereerde Beschrijvingen Voorbeeld",
             "upload_prompt_label": "Upload een promptbestand (TXT)",
-            "load_last_prompt": "Laad laatst gebruikte prompt"
+            "load_last_prompt": "Laad laatst gebruikte prompt",
+            "style_options": [
+                "Persoonlijk en vriendelijk",
+                "Urgent en belangrijk",
+                "Eigenzinnig en gedurfd",
+                "Informatief en servicegericht",
+                "Humoristisch",
+                "Overtuigend"
+            ]
         },
         "Deutsch": {
             "title": "Rian SuperAI PDG",
@@ -65,7 +81,15 @@ def get_translations(language):
             "temperature_label": "KI-Kreativität einstellen (Temperature)",
             "output_label": "Vorschau der generierten Beschreibungen",
             "upload_prompt_label": "Laden Sie eine Prompt-Datei hoch (TXT)",
-            "load_last_prompt": "Letzten verwendeten Prompt laden"
+            "load_last_prompt": "Letzten verwendeten Prompt laden",
+            "style_options": [
+                "Persönlich und freundlich",
+                "Dringend und wichtig",
+                "Eigenwillig und kühn",
+                "Informativ und dienstleistungsorientiert",
+                "Humorvoll",
+                "Überzeugend"
+            ]
         }
     }
     return translations[language]
@@ -119,14 +143,4 @@ if st.button(text["load_last_prompt"]):
 output_language = st.selectbox(text["language_label"], ["Nederlands", "English", "Deutsch"])
 
 # Style selection
-style_options = [
-    "Persönlich und freundlich",
-    "Dringend und wichtig",
-    "Eigenwillig und kühn",
-    "Informativ und dienstleistungsorientiert",
-    "Humorvoll",
-    "Überzeugend"
-]
-style_choice = st.selectbox(text["style_label"], style_options)
-
-# Voeg ondersteuning toe voor Duits in de output
+style_choice = st.selectbox(text["style_label"], text["style_options"])
