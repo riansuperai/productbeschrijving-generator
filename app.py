@@ -3,6 +3,7 @@ import pandas as pd
 import openai
 import os
 import tiktoken
+import html
 
 # Initialize OpenAI client
 client = openai.OpenAI()
@@ -53,6 +54,9 @@ def count_tokens(text, model="gpt-3.5-turbo"):
 
 def clean_text(text):
     return text.encode('utf-8', 'ignore').decode('utf-8')
+
+def convert_html_to_text(html_text):
+    return html.unescape(html_text).replace("\n", " ")
 
 # Interface language selection
 language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nederlands"])
@@ -121,9 +125,10 @@ if input_method == text["file_option"]:
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
             
-            # Toon de eerste 5 gegenereerde beschrijvingen in een output-sectie
+            # Toon de eerste 5 gegenereerde beschrijvingen in een grotere output-sectie
             st.subheader(text["output_label"])
-            st.write(df[["Productbeschrijving"]].head())
+            preview_text = "\n\n".join(df["Productbeschrijving"].head().apply(convert_html_to_text))
+            st.text_area("", preview_text, height=300)
             
             # Excel met nieuwe kolom downloaden
             st.download_button(
