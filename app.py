@@ -142,6 +142,12 @@ if input_method == text["file_option"]:
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
             
+            # Toon gegenereerde beschrijvingen met markdown-opmaak
+            st.subheader(text["output_label"])
+            for desc in df["Productbeschrijving"].head():
+                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
+                st.markdown("---")
+            
             # Excel met nieuwe kolom downloaden
             st.download_button(
                 label=text["download_button"],
@@ -149,10 +155,3 @@ if input_method == text["file_option"]:
                 file_name="producten_met_beschrijving.csv",
                 mime="text/csv"
             )
-else:
-    user_input = st.text_area("Voer productdetails in")
-    if st.button(text["generate_button"]):
-        with st.spinner(text["progress_message"]):
-            generated_description, token_usage = generate_description(user_input, user_prompt, output_language, style_choice, model_choice, temperature)
-        st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
-        st.sidebar.markdown(f"**{text['token_usage']}:** {token_usage}")
