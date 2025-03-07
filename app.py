@@ -25,7 +25,9 @@ def get_translations(language):
             "token_usage": "Tokens Used",
             "model_label": "Choose AI Model",
             "temperature_label": "Set AI Creativity (Temperature)",
-            "output_label": "Generated Descriptions Preview"
+            "output_label": "Generated Descriptions Preview",
+            "upload_prompt_label": "Upload a prompt file (TXT)",
+            "load_last_prompt": "Load last used prompt"
         },
         "Nederlands": {
             "title": "SaniSuper AI - Productbeschrijving Generator",
@@ -42,7 +44,9 @@ def get_translations(language):
             "token_usage": "Gebruikte tokens",
             "model_label": "Kies AI-model",
             "temperature_label": "Stel AI Creativiteit in (Temperature)",
-            "output_label": "Gegenereerde Beschrijvingen Voorbeeld"
+            "output_label": "Gegenereerde Beschrijvingen Voorbeeld",
+            "upload_prompt_label": "Upload een promptbestand (TXT)",
+            "load_last_prompt": "Laad laatst gebruikte prompt"
         }
     }
     return translations[language]
@@ -57,6 +61,10 @@ def clean_text(text):
 
 def convert_html_to_markdown(html_text):
     return html.unescape(html_text).replace("\n", "\n\n")
+
+# Load last used prompt
+if "last_prompt" not in st.session_state:
+    st.session_state.last_prompt = ""
 
 # Interface language selection
 language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nederlands"])
@@ -76,8 +84,17 @@ input_method = st.radio("", [text["file_option"], text["input_option"]])
 # API-key ophalen uit Streamlit secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
+# Prompt upload
+uploaded_prompt = st.file_uploader(text["upload_prompt_label"], type=["txt"])
+if uploaded_prompt is not None:
+    st.session_state.last_prompt = uploaded_prompt.read().decode("utf-8")
+
 # Prompt invoeren
-user_prompt = st.text_area(text["prompt_label"])
+user_prompt = st.text_area(text["prompt_label"], value=st.session_state.last_prompt)
+
+# Load last used prompt
+if st.button(text["load_last_prompt"]):
+    st.session_state.last_prompt = user_prompt
 
 # Output language selection
 output_language = st.selectbox(text["language_label"], ["Nederlands", "English"])
@@ -124,12 +141,6 @@ if input_method == text["file_option"]:
             # Toon tokengebruik
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
-            
-            # Toon de eerste 5 gegenereerde beschrijvingen met markdown-opmaak
-            st.subheader(text["output_label"])
-            for desc in df["Productbeschrijving"].head():
-                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
-                st.markdown("---")
             
             # Excel met nieuwe kolom downloaden
             st.download_button(
