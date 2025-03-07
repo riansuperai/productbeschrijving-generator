@@ -47,6 +47,9 @@ def count_tokens(text, model="gpt-3.5-turbo"):
     encoding = tiktoken.encoding_for_model(model)
     return len(encoding.encode(text))
 
+def clean_text(text):
+    return text.encode('utf-8', 'ignore').decode('utf-8')
+
 # Interface language selection
 language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nederlands"])
 text = get_translations(language)
@@ -92,8 +95,9 @@ def generate_description(product_info, prompt, language, style, model):
         ],
         temperature=0.7
     )
+    description = response.choices[0].message.content.strip()
     token_usage = count_tokens(str(product_info) + prompt + language + style, model)
-    return response.choices[0].message.content.strip(), token_usage
+    return clean_text(description), token_usage
 
 if input_method == text["file_option"]:
     uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
@@ -113,7 +117,7 @@ if input_method == text["file_option"]:
             # Excel met nieuwe kolom downloaden
             st.download_button(
                 label=text["download_button"],
-                data=df.to_csv(index=False).encode("utf-8"),
+                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
                 file_name="producten_met_beschrijving.csv",
                 mime="text/csv"
             )
