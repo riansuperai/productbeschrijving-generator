@@ -152,6 +152,15 @@ uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv
 if input_method == text["input_option"] and user_prompt:
     if st.button(text["generate_button"]):
         with st.spinner(text["progress_message"]):
-            generated_description = "Sample generated text based on input."  # Replace with actual AI call
+            response = client.chat.completions.create(
+                model=model_choice,
+                messages=[
+                    {"role": "system", "content": "You are an AI that generates product descriptions."},
+                    {"role": "user", "content": f"Language: {output_language}, Style: {style_choice}"},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=temperature
+            )
+            generated_description = response.choices[0].message.content.strip()
         st.subheader(text["result_label"])
         st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
