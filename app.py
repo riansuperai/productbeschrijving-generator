@@ -148,19 +148,7 @@ style_choice = st.selectbox(text["style_label"], text["style_options"])
 # File upload
 uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
 
-# Generate button for manual input
-if input_method == text["input_option"] and user_prompt:
+# Generate button for uploaded file
+if input_method == text["file_option"] and uploaded_file:
     if st.button(text["generate_button"]):
-        with st.spinner(text["progress_message"]):
-            response = client.chat.completions.create(
-                model=model_choice,
-                messages=[
-                    {"role": "system", "content": "You are an AI that generates product descriptions."},
-                    {"role": "user", "content": f"Language: {output_language}, Style: {style_choice}"},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=temperature
-            )
-            generated_description = response.choices[0].message.content.strip()
-        st.subheader(text["result_label"])
-        st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
+        st.write("Processing uploaded file...")  # Placeholder for actual processing logic
