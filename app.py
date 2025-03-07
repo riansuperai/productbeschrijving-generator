@@ -22,7 +22,8 @@ def get_translations(language):
             "progress_message": "Generating descriptions... Please wait...",
             "result_label": "Generated description",
             "token_usage": "Tokens Used",
-            "model_label": "Choose AI Model"
+            "model_label": "Choose AI Model",
+            "temperature_label": "Set AI Creativity (Temperature)"
         },
         "Nederlands": {
             "title": "SaniSuper AI - Productbeschrijving Generator",
@@ -37,7 +38,8 @@ def get_translations(language):
             "progress_message": "Beschrijvingen worden gegenereerd... Even geduld...",
             "result_label": "Gegenereerde beschrijving",
             "token_usage": "Gebruikte tokens",
-            "model_label": "Kies AI-model"
+            "model_label": "Kies AI-model",
+            "temperature_label": "Stel AI Creativiteit in (Temperature)"
         }
     }
     return translations[language]
@@ -58,6 +60,9 @@ st.title(text["title"])
 
 # AI Model selection
 model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-16k"])
+
+# Temperature selection
+temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -84,7 +89,7 @@ style_choice = st.selectbox(text["style_label"], style_options)
 
 # Functie om productbeschrijving te genereren
 
-def generate_description(product_info, prompt, language, style, model):
+def generate_description(product_info, prompt, language, style, model, temperature):
     response = client.chat.completions.create(
         model=model,  # Gebruik het geselecteerde model
         messages=[
@@ -93,7 +98,7 @@ def generate_description(product_info, prompt, language, style, model):
             {"role": "user", "content": prompt},
             {"role": "user", "content": str(product_info)}
         ],
-        temperature=0.7
+        temperature=temperature
     )
     description = response.choices[0].message.content.strip()
     token_usage = count_tokens(str(product_info) + prompt + language + style, model)
@@ -107,7 +112,7 @@ if input_method == text["file_option"]:
 
         if st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice), axis=1)
+                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
                 df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
             
             # Toon tokengebruik
@@ -125,6 +130,6 @@ else:
     user_input = st.text_area("Voer productdetails in")
     if st.button(text["generate_button"]):
         with st.spinner(text["progress_message"]):
-            generated_description, token_usage = generate_description(user_input, user_prompt, output_language, style_choice, model_choice)
+            generated_description, token_usage = generate_description(user_input, user_prompt, output_language, style_choice, model_choice, temperature)
         st.text_area(text["result_label"], generated_description, height=200)
         st.sidebar.markdown(f"**{text['token_usage']}:** {token_usage}")
