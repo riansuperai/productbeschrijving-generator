@@ -23,7 +23,8 @@ def get_translations(language):
             "result_label": "Generated description",
             "token_usage": "Tokens Used",
             "model_label": "Choose AI Model",
-            "temperature_label": "Set AI Creativity (Temperature)"
+            "temperature_label": "Set AI Creativity (Temperature)",
+            "output_label": "Generated Descriptions Preview"
         },
         "Nederlands": {
             "title": "SaniSuper AI - Productbeschrijving Generator",
@@ -39,7 +40,8 @@ def get_translations(language):
             "result_label": "Gegenereerde beschrijving",
             "token_usage": "Gebruikte tokens",
             "model_label": "Kies AI-model",
-            "temperature_label": "Stel AI Creativiteit in (Temperature)"
+            "temperature_label": "Stel AI Creativiteit in (Temperature)",
+            "output_label": "Gegenereerde Beschrijvingen Voorbeeld"
         }
     }
     return translations[language]
@@ -118,6 +120,10 @@ if input_method == text["file_option"]:
             # Toon tokengebruik
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
+            
+            # Toon de eerste 5 gegenereerde beschrijvingen in een output-sectie
+            st.subheader(text["output_label"])
+            st.write(df[["Productbeschrijving"]].head())
             
             # Excel met nieuwe kolom downloaden
             st.download_button(
