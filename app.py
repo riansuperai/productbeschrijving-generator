@@ -153,4 +153,5 @@ if input_method == text["input_option"] and user_prompt:
     if st.button(text["generate_button"]):
         with st.spinner(text["progress_message"]):
             generated_description = "Sample generated text based on input."  # Replace with actual AI call
+        st.subheader(text["result_label"])
         st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
