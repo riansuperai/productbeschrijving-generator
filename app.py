@@ -54,7 +54,7 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4"])
+model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-16k"])
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
