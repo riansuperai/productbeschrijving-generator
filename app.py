@@ -153,7 +153,7 @@ if input_method == text["file_option"] and uploaded_file:
     if st.button(text["generate_button"]):
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
         with st.spinner(text["progress_message"]):
-            results = df.apply(lambda row: client.chat.completions.create(
+            results = df.apply(lambda row: convert_html_to_markdown(client.chat.completions.create(
                 model=model_choice,
                 messages=[
                     {"role": "system", "content": "You are an AI that generates product descriptions."},
@@ -161,6 +161,6 @@ if input_method == text["file_option"] and uploaded_file:
                     {"role": "user", "content": str(row.to_dict())}
                 ],
                 temperature=temperature
-            ).choices[0].message.content.strip(), axis=1)
+            ).choices[0].message.content.strip()), axis=1)
             df["Generated Description"] = results
-        st.write(df)  # Display the updated dataframe
+        st.write(df.to_markdown(), unsafe_allow_html=True)
