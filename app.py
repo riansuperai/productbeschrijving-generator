@@ -163,4 +163,4 @@ if input_method == text["file_option"] and uploaded_file:
                 temperature=temperature
             ).choices[0].message.content.strip()), axis=1)
             df["Generated Description"] = results
-        st.write(df.to_markdown(), unsafe_allow_html=True)
+        st.markdown(df.to_string(index=False), unsafe_allow_html=True)
