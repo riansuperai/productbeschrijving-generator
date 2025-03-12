@@ -110,48 +110,39 @@ style_options = [
 ]
 style_choice = st.selectbox(text["style_label"], style_options)
 
-# Functie om productbeschrijving te genereren
+# File upload
+uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
 
-def generate_description(product_info, prompt, language, style, model, temperature):
-    response = client.chat.completions.create(
-        model=model,  # Gebruik het geselecteerde model
-        messages=[
-            {"role": "system", "content": "Je bent een AI die productbeschrijvingen genereert."},
-            {"role": "user", "content": f"Taal: {language}, Stijl: {style}"},
-            {"role": "user", "content": prompt},
-            {"role": "user", "content": str(product_info)}
-        ],
-        temperature=temperature
-    )
-    description = response.choices[0].message.content.strip()
-    token_usage = count_tokens(str(product_info) + prompt + language + style, model)
-    return clean_text(description), token_usage
+# Handle CSV and Excel file parsing
+if uploaded_file:
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
+        else:
+            df = pd.read_excel(uploaded_file)
+    except Exception as e:
+        st.error(f"Fout bij het inlezen van het bestand: {e}")
+        df = None
 
-if input_method == text["file_option"]:
-    uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
+    if df is not None and st.button(text["generate_button"]):
+        with st.spinner(text["progress_message"]):
+            results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
+            df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
 
-    if uploaded_file and openai.api_key and user_prompt:
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
-
-        if st.button(text["generate_button"]):
-            with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
-                df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
-            
-            # Toon tokengebruik
-            total_tokens = df["Tokens Gebruikt"].sum()
-            st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
-            
-            # Toon gegenereerde beschrijvingen met markdown-opmaak
-            st.subheader(text["output_label"])
-            for desc in df["Productbeschrijving"].head():
-                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
-                st.markdown("---")
-            
-            # Excel met nieuwe kolom downloaden
-            st.download_button(
-                label=text["download_button"],
-                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
-                file_name="producten_met_beschrijving.csv",
-                mime="text/csv"
-            )
+        # Toon tokengebruik
+        total_tokens = df["Tokens Gebruikt"].sum()
+        st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
+        
+        # Toon gegenereerde beschrijvingen met markdown-opmaak
+        st.subheader(text["output_label"])
+        for desc in df["Productbeschrijving"].head():
+            st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
+            st.markdown("---")
+        
+        # Excel met nieuwe kolom downloaden
+        st.download_button(
+            label=text["download_button"],
+            data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
+            file_name="producten_met_beschrijving.csv",
+            mime="text/csv"
+        )
