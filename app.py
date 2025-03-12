@@ -11,7 +11,7 @@ client = openai.OpenAI()
 def get_translations(language):
     translations = {
         "English": {
-            "title": "Sani SuperAI PDG",
+            "title": "Rian SuperAI PDG",
             "prompt_label": "Enter your prompt",
             "upload_label": "Upload a file (CSV or Excel)",
             "generate_button": "Generate Descriptions",
@@ -27,10 +27,18 @@ def get_translations(language):
             "temperature_label": "Set AI Creativity (Temperature)",
             "output_label": "Generated Descriptions Preview",
             "upload_prompt_label": "Upload a prompt file (TXT)",
-            "load_last_prompt": "Load last used prompt"
+            "load_last_prompt": "Load last used prompt",
+            "style_options": [
+                "Personal and friendly",
+                "Urgent and important",
+                "Quirky and bold",
+                "Informative and service-oriented",
+                "Humorous",
+                "Persuasive"
+            ]
         },
         "Nederlands": {
-            "title": "Ami SuperAI PDG",
+            "title": "Rian SuperAI PDG",
             "prompt_label": "Voer hier je prompt in",
             "upload_label": "Upload een bestand (CSV of Excel)",
             "generate_button": "Genereer Beschrijvingen",
@@ -46,7 +54,42 @@ def get_translations(language):
             "temperature_label": "Stel AI Creativiteit in (Temperature)",
             "output_label": "Gegenereerde Beschrijvingen Voorbeeld",
             "upload_prompt_label": "Upload een promptbestand (TXT)",
-            "load_last_prompt": "Laad laatst gebruikte prompt"
+            "load_last_prompt": "Laad laatst gebruikte prompt",
+            "style_options": [
+                "Persoonlijk en vriendelijk",
+                "Urgent en belangrijk",
+                "Eigenzinnig en gedurfd",
+                "Informatief en servicegericht",
+                "Humoristisch",
+                "Overtuigend"
+            ]
+        },
+        "Deutsch": {
+            "title": "Rian SuperAI PDG",
+            "prompt_label": "Geben Sie Ihren Prompt ein",
+            "upload_label": "Laden Sie eine Datei hoch (CSV oder Excel)",
+            "generate_button": "Beschreibungen generieren",
+            "download_button": "Ergebnisse herunterladen",
+            "language_label": "Wählen Sie die Ausgabesprache",
+            "style_label": "Wählen Sie einen Stil",
+            "file_option": "Datei hochladen",
+            "input_option": "Manuelle Eingabe",
+            "progress_message": "Beschreibungen werden generiert... Bitte warten...",
+            "result_label": "Generierte Beschreibung",
+            "token_usage": "Verwendete Tokens",
+            "model_label": "Wählen Sie ein KI-Modell",
+            "temperature_label": "KI-Kreativität einstellen (Temperature)",
+            "output_label": "Vorschau der generierten Beschreibungen",
+            "upload_prompt_label": "Laden Sie eine Prompt-Datei hoch (TXT)",
+            "load_last_prompt": "Letzten verwendeten Prompt laden",
+            "style_options": [
+                "Persönlich und freundlich",
+                "Dringend und wichtig",
+                "Eigenwillig und kühn",
+                "Informativ und dienstleistungsorientiert",
+                "Humorvoll",
+                "Überzeugend"
+            ]
         }
     }
     return translations[language]
@@ -67,7 +110,7 @@ if "last_prompt" not in st.session_state:
     st.session_state.last_prompt = ""
 
 # Interface language selection
-language = st.sidebar.selectbox("Select Language / Kies Taal", ["English", "Nederlands"])
+language = st.sidebar.selectbox("Select Language / Kies Taal / Sprache wählen", ["English", "Nederlands", "Deutsch"])
 text = get_translations(language)
 
 st.title(text["title"])
@@ -84,74 +127,25 @@ input_method = st.radio("", [text["file_option"], text["input_option"]])
 # API-key ophalen uit Streamlit secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Prompt upload
-uploaded_prompt = st.file_uploader(text["upload_prompt_label"], type=["txt"])
-if uploaded_prompt is not None:
-    st.session_state.last_prompt = uploaded_prompt.read().decode("utf-8")
+# File upload
+uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
 
-# Prompt invoeren
-user_prompt = st.text_area(text["prompt_label"], value=st.session_state.last_prompt)
-
-# Load last used prompt
-if st.button(text["load_last_prompt"]):
-    st.session_state.last_prompt = user_prompt
-
-# Output language selection
-output_language = st.selectbox(text["language_label"], ["Nederlands", "English"])
-
-# Style selection
-style_options = [
-    "Persoonlijk en vriendelijk",
-    "Urgent en dringend",
-    "Eigenzinnig en gedurfd",
-    "Informatief en servicegericht",
-    "Humoristisch",
-    "Overtuigend"
-]
-style_choice = st.selectbox(text["style_label"], style_options)
-
-# Functie om productbeschrijving te genereren
-
-def generate_description(product_info, prompt, language, style, model, temperature):
-    response = client.chat.completions.create(
-        model=model,  # Gebruik het geselecteerde model
-        messages=[
-            {"role": "system", "content": "Je bent een AI die productbeschrijvingen genereert."},
-            {"role": "user", "content": f"Taal: {language}, Stijl: {style}"},
-            {"role": "user", "content": prompt},
-            {"role": "user", "content": str(product_info)}
-        ],
-        temperature=temperature
-    )
-    description = response.choices[0].message.content.strip()
-    token_usage = count_tokens(str(product_info) + prompt + language + style, model)
-    return clean_text(description), token_usage
-
-if input_method == text["file_option"]:
-    uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
-
-    if uploaded_file and openai.api_key and user_prompt:
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
-
-        if st.button(text["generate_button"]):
+# Generate button for uploaded file
+if input_method == text["file_option"] and uploaded_file:
+    if st.button(text["generate_button"]):
+        try:
+            df = pd.read_csv(uploaded_file, encoding='utf-8') if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
             with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
-                df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
-            
-            # Toon tokengebruik
-            total_tokens = df["Tokens Gebruikt"].sum()
-            st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
-            
-            # Toon gegenereerde beschrijvingen met markdown-opmaak
-            st.subheader(text["output_label"])
-            for desc in df["Productbeschrijving"].head():
-                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
-                st.markdown("---")
-            
-            # Excel met nieuwe kolom downloaden
-            st.download_button(
-                label=text["download_button"],
-                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
-                file_name="producten_met_beschrijving.csv",
-                mime="text/csv"
-            )
+                results = df.apply(lambda row: convert_html_to_markdown(client.chat.completions.create(
+                    model=model_choice,
+                    messages=[
+                        {"role": "system", "content": "You are an AI that generates product descriptions."},
+                        {"role": "user", "content": f"Language: {output_language}, Style: {style_choice}"},
+                        {"role": "user", "content": str(row.to_dict())}
+                    ],
+                    temperature=temperature
+                ).choices[0].message.content.strip()), axis=1)
+                df["Generated Description"] = results
+            st.markdown(df.to_string(index=False), unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
