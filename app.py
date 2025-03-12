@@ -11,7 +11,7 @@ client = openai.OpenAI()
 def get_translations(language):
     translations = {
         "English": {
-            "title": "Rian SuperAI PDG",
+            "title": "Ami SuperAI PDG",
             "prompt_label": "Enter your prompt",
             "upload_label": "Upload a file (CSV or Excel)",
             "generate_button": "Generate Descriptions",
@@ -30,7 +30,7 @@ def get_translations(language):
             "load_last_prompt": "Load last used prompt"
         },
         "Nederlands": {
-            "title": "Rian SuperAI PDG",
+            "title": "Ami SuperAI PDG",
             "prompt_label": "Voer hier je prompt in",
             "upload_label": "Upload een bestand (CSV of Excel)",
             "generate_button": "Genereer Beschrijvingen",
