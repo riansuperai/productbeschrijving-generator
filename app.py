@@ -84,7 +84,9 @@ if ai_platform == "OpenAI":
     model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-16k"])
     temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
 else:
-    model_choice = "gemini-pro"
+    # Gemini models
+    gemini_models = ["gemini-pro", "gemini-pro-vision"] # Toevoegen van Vision model
+    model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
     temperature = 1.0 # Gemini heeft geen temperature parameter op dezelfde manier als openai
 
 # Choose input method
@@ -169,7 +171,4 @@ if input_method == text["file_option"]:
                 df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
 
             # Toon tokengebruik
-            total_tokens = df["Tokens Gebruikt"].sum()
-            st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
-
-            # Toon gegenereerde beschrijving
+            total_tokens = df["Tokens Gebru
