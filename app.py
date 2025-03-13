@@ -66,6 +66,48 @@ def clean_text(text):
 def convert_html_to_markdown(html_text):
     return html.unescape(html_text).replace("\n", "\n\n")
 
+def generate_description(item, prompt, output_language, style, model, temperature):
+    """
+    Genereer een beschrijving voor een item met behulp van OpenAI's GPT-model.
+    
+    Args:
+        item (dict): Een dictionary met de gegevens van het item.
+        prompt (str): De prompt die wordt gebruikt om de beschrijving te genereren.
+        output_language (str): De taal waarin de beschrijving moet worden gegenereerd.
+        style (str): De stijl van de beschrijving.
+        model (str): Het GPT-model dat moet worden gebruikt.
+        temperature (float): De creativiteit van het model (0.0 tot 1.2).
+    
+    Returns:
+        tuple: Een tuple met de gegenereerde beschrijving en het aantal gebruikte tokens.
+    """
+    try:
+        # Bouw de prompt op basis van de invoer
+        full_prompt = f"{prompt}\n\nItem: {item['Item']}\nTaal: {output_language}\nStijl: {style}\nGenereer een beschrijving."
+        
+        # Roep het OpenAI-model aan
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": full_prompt}
+            ],
+            temperature=temperature,
+            max_tokens=150
+        )
+        
+        # Haal de gegenereerde tekst op
+        description = response.choices[0].message.content.strip()
+        
+        # Tel het aantal gebruikte tokens
+        tokens_used = count_tokens(full_prompt + description, model)
+        
+        return description, tokens_used
+    
+    except Exception as e:
+        st.error(f"Fout bij het genereren van de beschrijving: {e}")
+        return f"Fout: {e}", 0
+
 # Load last used prompt
 if "last_prompt" not in st.session_state:
     st.session_state.last_prompt = ""
@@ -131,7 +173,7 @@ if input_method == text["file_option"]:
 
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
+                results = df.apply(lambda row: generate_description({"Item": row["Item"]}, user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
                 df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
 
             # Toon tokengebruik
