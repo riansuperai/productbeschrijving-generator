@@ -167,8 +167,4 @@ if input_method == text["file_option"]:
 
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature, ai_platform), axis=1)
-                df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
-
-            # Toon tokengebruik
-            total_tokens = df["Tokens Gebru
+                results
