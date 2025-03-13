@@ -111,6 +111,18 @@ style_options = [
 ]
 style_choice = st.selectbox(text["style_label"], style_options)
 
+# Define generate_description function
+def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature):
+    prompt = f"{user_prompt}\n\nProductdetails: {product_details}\n\nOutput language: {output_language}\nStyle: {style_choice}"
+    response = client.chat.completions.create(
+        model=model_choice,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature
+    )
+    description = response.choices[0].message.content
+    tokens_used = response.usage.total_tokens
+    return description, tokens_used
+
 # Manual input section
 if input_method == text["input_option"]:
     manual_input = st.text_area(text["manual_input_label"])
@@ -144,28 +156,5 @@ if input_method == text["file_option"]:
             # Toon tokengebruik
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
-            
-            # Toon gegenereerde beschrijvingen met markdown-opmaak
-            st.subheader(text["output_label"])
-            for desc in df["Productbeschrijving"].head():
-                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
-                st.markdown("---")
-            
-            # Excel met nieuwe kolom downloaden
-            st.download_button(
-                label=text["download_button"],
-                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
-                file_name="producten_met_beschrijving.csv",
-                mime="text/csv"
-            )
 
-def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature):
-    prompt = f"{user_prompt}\n\nProductdetails: {product_details}\n\nOutput language: {output_language}\nStyle: {style_choice}"
-    response = client.chat.completions.create(
-        model=model_choice,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=temperature
-    )
-    description = response.choices[0].message.content
-    tokens_used = response.usage.total_tokens
-    return description, tokens_used
+            # Toon gegenereerde beschrijvingen met markdown-op
