@@ -85,7 +85,7 @@ if ai_platform == "OpenAI":
     temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
 else:
     # Gemini models
-    gemini_models = ["gemini-pro", "gemini-pro-vision"] # Toevoegen van Vision model
+    gemini_models = ["gemini-pro", "gemini-pro-vision", "gemini-1.5-pro", "gemini-1.5-flash"] # Voeg 1.5 pro en flash toe.
     model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
     temperature = 1.0 # Gemini heeft geen temperature parameter op dezelfde manier als openai
 
@@ -167,4 +167,4 @@ if input_method == text["file_option"]:
 
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
-                results
+                results = df.apply(lambda row: generate_description(row.to
