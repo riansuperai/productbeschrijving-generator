@@ -6,7 +6,7 @@ import tiktoken
 import html
 
 # Initialize OpenAI client
-client = openai.OpenAI()
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def get_translations(language):
     translations = {
@@ -65,12 +65,12 @@ def convert_html_to_markdown(html_text):
 def generate_description(data, prompt, language, style, model, temperature):
     """Functie om een beschrijving te genereren met OpenAI"""
     input_text = f"Prompt: {prompt}\nLanguage: {language}\nStyle: {style}\nData: {data}"
-    response = client.chat_completions.create(
+    response = openai.ChatCompletion.create(
         model=model,
         messages=[{"role": "system", "content": input_text}],
         temperature=temperature
     )
-    return response.choices[0].message.content.strip(), count_tokens(response.choices[0].message.content, model)
+    return response["choices"][0]["message"]["content"].strip(), count_tokens(response["choices"][0]["message"]["content"], model)
 
 # Load last used prompt
 if "last_prompt" not in st.session_state:
@@ -90,9 +90,6 @@ temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
-
-# API-key ophalen uit Streamlit secrets
-openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Prompt upload
 uploaded_prompt = st.file_uploader(text["upload_prompt_label"], type=["txt"])
