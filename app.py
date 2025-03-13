@@ -157,4 +157,16 @@ if input_method == text["file_option"]:
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
 
-            # Toon gegenereerde beschrijvingen met markdown-op
+            # Toon gegenereerde beschrijvingen met markdown-opmaak
+            st.subheader(text["output_label"])
+            for desc in df["Productbeschrijving"].head():
+                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
+                st.markdown("---")
+
+            # Excel met nieuwe kolom downloaden
+            st.download_button(
+                label=text["download_button"],
+                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
+                file_name="producten_met_beschrijving.csv",
+                mime="text/csv"
+            )
