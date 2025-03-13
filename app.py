@@ -62,6 +62,16 @@ def clean_text(text):
 def convert_html_to_markdown(html_text):
     return html.unescape(html_text).replace("\n", "\n\n")
 
+def generate_description(data, prompt, language, style, model, temperature):
+    """Functie om een beschrijving te genereren met OpenAI"""
+    input_text = f"Prompt: {prompt}\nLanguage: {language}\nStyle: {style}\nData: {data}"
+    response = client.chat_completions.create(
+        model=model,
+        messages=[{"role": "system", "content": input_text}],
+        temperature=temperature
+    )
+    return response.choices[0].message.content.strip(), count_tokens(response.choices[0].message.content, model)
+
 # Load last used prompt
 if "last_prompt" not in st.session_state:
     st.session_state.last_prompt = ""
@@ -116,7 +126,7 @@ if input_method == text["input_option"]:
     manual_input = st.text_area("Voer hier je productgegevens in", "")
     if st.button(text["generate_button"]):
         with st.spinner(text["progress_message"]):
-            generated_description = generate_description({"manual_input": manual_input}, user_prompt, output_language, style_choice, model_choice, temperature)
+            generated_description, _ = generate_description({"manual_input": manual_input}, user_prompt, output_language, style_choice, model_choice, temperature)
             st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
 
 # File upload
