@@ -3,9 +3,13 @@ import pandas as pd
 import openai
 import tiktoken
 import html
+import google.generativeai as genai
 
 # Initialize OpenAI client
 client = openai.OpenAI()
+
+# Initialize Gemini
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"]) # API key uit secrets
 
 def get_translations(language):
     translations = {
@@ -74,10 +78,14 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-16k"])
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["OpenAI", "Gemini"])
 
-# Temperature selection
-temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
+if ai_platform == "OpenAI":
+    model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-16k"])
+    temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
+else:
+    model_choice = "gemini-pro"
+    temperature = 1.0 # Gemini heeft geen temperature parameter op dezelfde manier als openai
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -112,16 +120,23 @@ style_options = [
 style_choice = st.selectbox(text["style_label"], style_options)
 
 # Define generate_description function
-def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature):
+def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform):
     prompt = f"{user_prompt}\n\nProductdetails: {product_details}\n\nOutput language: {output_language}\nStyle: {style_choice}"
-    response = client.chat.completions.create(
-        model=model_choice,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=temperature
-    )
-    description = response.choices[0].message.content
-    tokens_used = response.usage.total_tokens
-    return description, tokens_used
+    if ai_platform == "OpenAI":
+        response = client.chat.completions.create(
+            model=model_choice,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature
+        )
+        description = response.choices[0].message.content
+        tokens_used = response.usage.total_tokens
+        return description, tokens_used
+    elif ai_platform == "Gemini":
+        model = genai.GenerativeModel(model_choice)
+        response = model.generate_content(prompt)
+        description = response.text
+        tokens_used = count_tokens(prompt + description) # Gemini geeft niet direct token gebruik.
+        return description, tokens_used
 
 # Manual input section
 if input_method == text["input_option"]:
@@ -129,7 +144,7 @@ if input_method == text["input_option"]:
     if st.button(text["generate_button"]) and manual_input:
         product_details = dict(zip(["Productdetails"], [manual_input]))
         with st.spinner(text["progress_message"]):
-            description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature)
+            description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
         st.markdown(convert_html_to_markdown(description), unsafe_allow_html=True)
         st.sidebar.markdown(f"**{text['token_usage']}:** {tokens_used}")
 
@@ -150,23 +165,11 @@ if input_method == text["file_option"]:
 
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
+                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature, ai_platform), axis=1)
                 df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
 
             # Toon tokengebruik
             total_tokens = df["Tokens Gebruikt"].sum()
             st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
 
-            # Toon gegenereerde beschrijvingen met markdown-opmaak
-            st.subheader(text["output_label"])
-            for desc in df["Productbeschrijving"].head():
-                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
-                st.markdown("---")
-
-            # Excel met nieuwe kolom downloaden
-            st.download_button(
-                label=text["download_button"],
-                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
-                file_name="producten_met_beschrijving.csv",
-                mime="text/csv"
-            )
+            # Toon gegenereerde beschrijving
