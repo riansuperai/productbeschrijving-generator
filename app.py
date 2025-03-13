@@ -6,7 +6,7 @@ import tiktoken
 import html
 
 # Initialize OpenAI client
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = openai.OpenAI()
 
 def get_translations(language):
     translations = {
@@ -27,7 +27,9 @@ def get_translations(language):
             "temperature_label": "Set AI Creativity (Temperature)",
             "output_label": "Generated Descriptions Preview",
             "upload_prompt_label": "Upload a prompt file (TXT)",
-            "load_last_prompt": "Load last used prompt"
+            "load_last_prompt": "Load last used prompt",
+            "manual_input_label": "Enter your data manually",
+            "manual_input_placeholder": "Enter your data here, one item per line"
         },
         "Nederlands": {
             "title": "Rian SuperAI PDG",
@@ -46,7 +48,9 @@ def get_translations(language):
             "temperature_label": "Stel AI Creativiteit in (Temperature)",
             "output_label": "Gegenereerde Beschrijvingen Voorbeeld",
             "upload_prompt_label": "Upload een promptbestand (TXT)",
-            "load_last_prompt": "Laad laatst gebruikte prompt"
+            "load_last_prompt": "Laad laatst gebruikte prompt",
+            "manual_input_label": "Voer uw gegevens handmatig in",
+            "manual_input_placeholder": "Voer hier uw gegevens in, één item per regel"
         }
     }
     return translations[language]
@@ -61,16 +65,6 @@ def clean_text(text):
 
 def convert_html_to_markdown(html_text):
     return html.unescape(html_text).replace("\n", "\n\n")
-
-def generate_description(data, prompt, language, style, model, temperature):
-    """Functie om een beschrijving te genereren met OpenAI"""
-    input_text = f"Prompt: {prompt}\nLanguage: {language}\nStyle: {style}\nData: {data}"
-    response = client.chat_completions.create(
-        model=model,
-        messages=[{"role": "system", "content": input_text}],
-        temperature=temperature
-    )
-    return response.choices[0].message.content.strip(), count_tokens(response.choices[0].message.content, model)
 
 # Load last used prompt
 if "last_prompt" not in st.session_state:
@@ -90,6 +84,9 @@ temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
+
+# API-key ophalen uit Streamlit secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Prompt upload
 uploaded_prompt = st.file_uploader(text["upload_prompt_label"], type=["txt"])
@@ -117,32 +114,56 @@ style_options = [
 ]
 style_choice = st.selectbox(text["style_label"], style_options)
 
-# Handle manual input
-manual_input = ""
-if input_method == text["input_option"]:
-    manual_input = st.text_area("Voer hier je productgegevens in", "")
-    if st.button(text["generate_button"]):
+if input_method == text["file_option"]:
+    # File upload
+    uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
+
+    # Handle CSV and Excel file parsing
+    if uploaded_file:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
+            else:
+                df = pd.read_excel(uploaded_file)
+        except Exception as e:
+            st.error(f"Fout bij het inlezen van het bestand: {e}")
+            df = None
+
+        if df is not None and st.button(text["generate_button"]):
+            with st.spinner(text["progress_message"]):
+                results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
+                df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
+
+            # Toon tokengebruik
+            total_tokens = df["Tokens Gebruikt"].sum()
+            st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
+            
+            # Toon gegenereerde beschrijvingen met markdown-opmaak
+            st.subheader(text["output_label"])
+            for desc in df["Productbeschrijving"].head():
+                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
+                st.markdown("---")
+            
+            # Excel met nieuwe kolom downloaden
+            st.download_button(
+                label=text["download_button"],
+                data=df.to_csv(index=False, encoding="utf-8").encode("utf-8"),
+                file_name="producten_met_beschrijving.csv",
+                mime="text/csv"
+            )
+else:
+    # Manual input section
+    manual_input = st.text_area(text["manual_input_label"], placeholder=text["manual_input_placeholder"], height=150)
+    
+    if manual_input and st.button(text["generate_button"]):
+        # Split manual input into lines
+        items = manual_input.split("\n")
+        
+        # Create a DataFrame from the manual input
+        df = pd.DataFrame(items, columns=["Item"])
+        
         with st.spinner(text["progress_message"]):
-            generated_description, _ = generate_description({"manual_input": manual_input}, user_prompt, output_language, style_choice, model_choice, temperature)
-            st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
-
-# File upload
-uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
-
-# Handle CSV and Excel file parsing
-if uploaded_file:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
-        else:
-            df = pd.read_excel(uploaded_file)
-    except Exception as e:
-        st.error(f"Fout bij het inlezen van het bestand: {e}")
-        df = None
-
-    if df is not None and st.button(text["generate_button"]):
-        with st.spinner(text["progress_message"]):
-            results = df.apply(lambda row: generate_description(row.to_dict(), user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
+            results = df.apply(lambda row: generate_description({"Item": row["Item"]}, user_prompt, output_language, style_choice, model_choice, temperature), axis=1)
             df["Productbeschrijving"], df["Tokens Gebruikt"] = zip(*results)
 
         # Toon tokengebruik
