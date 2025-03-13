@@ -110,6 +110,11 @@ style_options = [
 ]
 style_choice = st.selectbox(text["style_label"], style_options)
 
+# Handle manual input
+manual_input = ""
+if input_method == text["input_option"]:
+    manual_input = st.text_area("Voer hier je productgegevens in", "")
+
 # File upload
 uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
 
