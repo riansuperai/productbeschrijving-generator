@@ -4,3 +4,4 @@ streamlit
 openpyxl
 openai>=1.0.0
 tiktoken
+google-generativeai
