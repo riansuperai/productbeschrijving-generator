@@ -161,10 +161,4 @@ if input_method == text["file_option"]:
                 df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
             else:
                 df = pd.read_excel(uploaded_file)
-        except Exception as e:
-            st.error(f"Fout bij het inlezen van het bestand: {e}")
-            df = None
-
-        if df is not None and st.button(text["generate_button"]):
-            with st.spinner(text["progress_message"]):
-                results = df.apply(lambda row: generate_description(row.to
+        except Exception as
