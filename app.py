@@ -11,7 +11,7 @@ client = openai.OpenAI()
 def get_translations(language):
     translations = {
         "English": {
-            "title": "Ami SuperAI",
+            "title": "Rian SuperAI PDG",
             "prompt_label": "Enter your prompt",
             "upload_label": "Upload a file (CSV or Excel)",
             "generate_button": "Generate Descriptions",
@@ -30,7 +30,7 @@ def get_translations(language):
             "load_last_prompt": "Load last used prompt"
         },
         "Nederlands": {
-            "title": "Ami SuperAI",
+            "title": "Rian SuperAI PDG",
             "prompt_label": "Voer hier je prompt in",
             "upload_label": "Upload een bestand (CSV of Excel)",
             "generate_button": "Genereer Beschrijvingen",
@@ -114,6 +114,10 @@ style_choice = st.selectbox(text["style_label"], style_options)
 manual_input = ""
 if input_method == text["input_option"]:
     manual_input = st.text_area("Voer hier je productgegevens in", "")
+    if st.button(text["generate_button"]):
+        with st.spinner(text["progress_message"]):
+            generated_description = generate_description({"manual_input": manual_input}, user_prompt, output_language, style_choice, model_choice, temperature)
+            st.markdown(convert_html_to_markdown(generated_description), unsafe_allow_html=True)
 
 # File upload
 uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
