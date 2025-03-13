@@ -85,7 +85,7 @@ if ai_platform == "OpenAI":
     temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
 else:
     # Gemini models
-    gemini_models = ["gemini-pro", "gemini-pro-vision", "gemini-1.5-pro", "gemini-1.5-flash"] # Voeg 1.5 pro en flash toe.
+    gemini_models = ["gemini-pro", "gemini-pro-vision"] # Toevoegen van Vision model
     model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
     temperature = 1.0 # Gemini heeft geen temperature parameter op dezelfde manier als openai
 
@@ -161,4 +161,10 @@ if input_method == text["file_option"]:
                 df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
             else:
                 df = pd.read_excel(uploaded_file)
-        except Exception as
+        except Exception as e:
+            st.error(f"Fout bij het inlezen van het bestand: {e}")
+            df = None
+
+        if df is not None and st.button(text["generate_button"]):
+            with st.spinner(text["progress_message"]):
+                results
