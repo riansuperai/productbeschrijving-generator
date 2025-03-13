@@ -11,7 +11,7 @@ client = openai.OpenAI()
 def get_translations(language):
     translations = {
         "English": {
-            "title": "Ami Super-AI",
+            "title": "Rian SuperAI PDG",
             "prompt_label": "Enter your prompt",
             "upload_label": "Upload a file (CSV or Excel)",
             "generate_button": "Generate Descriptions",
@@ -32,7 +32,7 @@ def get_translations(language):
             "manual_input_placeholder": "Enter your data here, one item per line"
         },
         "Nederlands": {
-            "title": "Ami Super-AI",
+            "title": "Rian SuperAI PDG",
             "prompt_label": "Voer hier je prompt in",
             "upload_label": "Upload een bestand (CSV of Excel)",
             "generate_button": "Genereer Beschrijvingen",
@@ -167,6 +167,15 @@ if input_method == text["file_option"]:
                 df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
             else:
                 df = pd.read_excel(uploaded_file)
+            
+            # Toon de kolomnamen van de DataFrame voor debugging
+            st.write("Beschikbare kolommen in het bestand:", df.columns.tolist())
+            
+            # Controleer of de kolom "Item" bestaat, anders gebruik de eerste kolom
+            if "Item" not in df.columns:
+                st.warning(f"De kolom 'Item' bestaat niet in het bestand. De eerste kolom ('{df.columns[0]}') wordt gebruikt.")
+                df.rename(columns={df.columns[0]: "Item"}, inplace=True)
+            
         except Exception as e:
             st.error(f"Fout bij het inlezen van het bestand: {e}")
             df = None
