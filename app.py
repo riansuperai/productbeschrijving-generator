@@ -111,8 +111,7 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = response.text
-        # tokens_used = len(prompt + description) # removed token count
-        return description, 0 # Removed the token count.
+        return description, 0  # Removed the token count.
 
 # Manual input section
 if input_method == text["input_option"]:
@@ -122,7 +121,6 @@ if input_method == text["input_option"]:
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
         st.markdown(convert_html_to_markdown(description), unsafe_allow_html=True)
-        # st.sidebar.markdown(f"**{text['token_usage']}:** {tokens_used}") # removed token count
 
 # File upload
 if input_method == text["file_option"]:
@@ -142,17 +140,18 @@ if input_method == text["file_option"]:
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
                 results = []
-                # total_tokens = 0 # removed token count
                 for index, row in df.iterrows():
                     product_details = dict(row)
                     description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
                     results.append(description)
-                    # total_tokens += tokens_used # removed token count
 
                 df["Generated Description"] = results
                 st.dataframe(df)
 
-                # st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}") # removed token count
+                # Display generated descriptions in Markdown format
+                st.markdown("## Generated Descriptions (Markdown)")
+                for description in results:
+                    st.markdown(f"***\n{convert_html_to_markdown(description)}")
 
                 csv = df.to_csv(index=False).encode('utf-8')
                 st.download_button(
