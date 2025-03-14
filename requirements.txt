@@ -5,3 +5,4 @@ openpyxl
 openai>=1.0.0
 tiktoken
 google-generativeai
+tiktoken>=0.6.0
