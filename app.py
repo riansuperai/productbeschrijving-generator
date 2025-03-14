@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import tiktoken
 import html
 import google.generativeai as genai
 
@@ -52,11 +51,6 @@ def get_translations(language):
     }
     return translations[language]
 
-# Functie om tokens te tellen
-def count_tokens(text, model="gemini-pro"):
-    encoding = tiktoken.encoding_for_model("cl100k_base") # Use the correct encoding for Gemini.
-    return len(encoding.encode(text))
-
 def clean_text(text):
     return text.encode('utf-8', 'ignore').decode('utf-8')
 
@@ -74,10 +68,10 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"]) # Removed OpenAI.
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])  # Removed OpenAI.
 
 # Gemini models
-gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"] # Changed to 1.5 versions.
+gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]  # Changed to 1.5 versions.
 model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
 temperature = 1.0  # Gemini has no temperature parameter in the same way as OpenAI.
 
@@ -117,8 +111,8 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = response.text
-        tokens_used = count_tokens(prompt + description)  # Gemini does not directly provide token usage.
-        return description, tokens_used
+        # tokens_used = len(prompt + description) # removed token count
+        return description, 0 # Removed the token count.
 
 # Manual input section
 if input_method == text["input_option"]:
@@ -128,7 +122,7 @@ if input_method == text["input_option"]:
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
         st.markdown(convert_html_to_markdown(description), unsafe_allow_html=True)
-        st.sidebar.markdown(f"**{text['token_usage']}:** {tokens_used}")
+        # st.sidebar.markdown(f"**{text['token_usage']}:** {tokens_used}") # removed token count
 
 # File upload
 if input_method == text["file_option"]:
@@ -148,17 +142,17 @@ if input_method == text["file_option"]:
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
                 results = []
-                total_tokens = 0
+                # total_tokens = 0 # removed token count
                 for index, row in df.iterrows():
                     product_details = dict(row)
                     description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
                     results.append(description)
-                    total_tokens += tokens_used
+                    # total_tokens += tokens_used # removed token count
 
                 df["Generated Description"] = results
                 st.dataframe(df)
 
-                st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}")
+                # st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}") # removed token count
 
                 csv = df.to_csv(index=False).encode('utf-8')
                 st.download_button(
