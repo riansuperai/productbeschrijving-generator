@@ -2,13 +2,9 @@ import streamlit as st
 import pandas as pd
 import html
 import google.generativeai as genai
-import openai
 
 # Initialize Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])  # API key uit secrets
-
-# Initialize OpenAI client
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def get_translations(language):
     translations = {
@@ -72,16 +68,12 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["OpenAI", "Gemini"])
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])  # Removed OpenAI.
 
-if ai_platform == "OpenAI":
-    model_choice = st.sidebar.selectbox(text["model_label"], ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-16k"])
-    temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.2, 0.7, 0.1)
-else:
-    # Gemini models
-    gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
-    model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
-    temperature = 1.0  # Gemini has no temperature parameter in the same way as OpenAI.
+# Gemini models
+gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]  # Changed to 1.5 versions.
+model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
+temperature = 1.0  # Gemini has no temperature parameter in the same way as OpenAI.
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -115,19 +107,12 @@ style_choice = st.selectbox(text["style_label"], style_options)
 # Define generate_description function
 def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform):
     prompt = f"{user_prompt}\n\nProductdetails: {product_details}\n\nOutput language: {output_language}\nStyle: {style_choice}"
-    if ai_platform == "OpenAI":
-        response = client.chat.completions.create(
-            model=model_choice,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature
-        )
-        description = response.choices[0].message.content
-        return description, 0  # Removed token count
-    elif ai_platform == "Gemini":
+    if ai_platform == "Gemini":
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = response.text
-        return description, 0 # Removed token count
+        # tokens_used = len(prompt + description) # removed token count
+        return description, 0 # Removed the token count.
 
 # Manual input section
 if input_method == text["input_option"]:
@@ -171,3 +156,8 @@ if input_method == text["file_option"]:
 
                 csv = df.to_csv(index=False).encode('utf-8')
                 st.download_button(
+                    label=text["download_button"],
+                    data=csv,
+                    file_name='generated_descriptions.csv',
+                    mime='text/csv'
+                )
