@@ -4,7 +4,7 @@ import html
 import google.generativeai as genai
 
 # Initialize Gemini
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])  # API key uit secrets
 
 def get_translations(language):
     translations = {
@@ -20,7 +20,9 @@ def get_translations(language):
             "input_option": "Manual input",
             "progress_message": "Generating descriptions... Please wait...",
             "result_label": "Generated description",
+            "token_usage": "Tokens Used",
             "model_label": "Choose AI Model",
+            "temperature_label": "Set AI Creativity (Temperature)",
             "output_label": "Generated Descriptions Preview",
             "upload_prompt_label": "Upload a prompt file (TXT)",
             "load_last_prompt": "Load last used prompt",
@@ -38,7 +40,9 @@ def get_translations(language):
             "input_option": "Handmatige invoer",
             "progress_message": "Beschrijvingen worden gegenereerd... Even geduld...",
             "result_label": "Gegenereerde beschrijving",
+            "token_usage": "Gebruikte tokens",
             "model_label": "Kies AI-model",
+            "temperature_label": "Stel AI Creativiteit in (Temperature)",
             "output_label": "Gegenereerde Beschrijvingen Voorbeeld",
             "upload_prompt_label": "Upload een promptbestand (TXT)",
             "load_last_prompt": "Laad laatst gebruikte prompt",
@@ -64,12 +68,12 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])  # Removed OpenAI.
 
 # Gemini models
-gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
+gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]  # Changed to 1.5 versions.
 model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
-temperature = 1.0
+temperature = 1.0  # Gemini has no temperature parameter in the same way as OpenAI.
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -107,7 +111,8 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = response.text
-        return description, 0
+        # tokens_used = len(prompt + description) # removed token count
+        return description, 0 # Removed the token count.
 
 # Manual input section
 if input_method == text["input_option"]:
@@ -117,6 +122,7 @@ if input_method == text["input_option"]:
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
         st.markdown(convert_html_to_markdown(description), unsafe_allow_html=True)
+        # st.sidebar.markdown(f"**{text['token_usage']}:** {tokens_used}") # removed token count
 
 # File upload
 if input_method == text["file_option"]:
@@ -136,18 +142,22 @@ if input_method == text["file_option"]:
         if df is not None and st.button(text["generate_button"]):
             with st.spinner(text["progress_message"]):
                 results = []
+                # total_tokens = 0 # removed token count
                 for index, row in df.iterrows():
                     product_details = dict(row)
                     description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
                     results.append(description)
+                    # total_tokens += tokens_used # removed token count
 
                 df["Generated Description"] = results
                 st.dataframe(df)
 
-                # Display generated descriptions in Markdown format
-                st.markdown("## Generated Descriptions (Markdown)")
-                for description in results:
-                    st.markdown(f"***\n{convert_html_to_markdown(description)}")
-                try:
-                    df = df.astype(str) # convert all collums to string.
-                    csv = df.to_csv(index=False,
+                # st.sidebar.markdown(f"**{text['token_usage']}:** {total_tokens}") # removed token count
+
+                csv = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=text["download_button"],
+                    data=csv,
+                    file_name='generated_descriptions.csv',
+                    mime='text/csv',
+                )
