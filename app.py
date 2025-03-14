@@ -151,6 +151,11 @@ if input_method == text["file_option"]:
             df["Generated Description"] = results
             st.dataframe(df)
 
+            # Display generated descriptions in markdown format
+            st.subheader(text["output_label"])
+            for desc in results:
+                st.markdown(convert_html_to_markdown(desc), unsafe_allow_html=True)
+
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label=text["download_button"],
