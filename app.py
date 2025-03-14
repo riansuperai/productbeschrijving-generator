@@ -148,11 +148,6 @@ if input_method == text["file_option"]:
                 st.markdown("## Generated Descriptions (Markdown)")
                 for description in results:
                     st.markdown(f"***\n{convert_html_to_markdown(description)}")
-
-                csv = df.to_csv(index=False, encoding='utf-8', encoding_errors='replace').encode('utf-8') # Added encoding errors
-                st.download_button(
-                    label=text["download_button"],
-                    data=csv,
-                    file_name='generated_descriptions.csv',
-                    mime='text/csv'
-                )
+                try:
+                    df = df.astype(str) # convert all collums to string.
+                    csv = df.to_csv(index=False,
