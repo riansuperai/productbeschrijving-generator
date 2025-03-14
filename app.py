@@ -4,7 +4,7 @@ import html
 import google.generativeai as genai
 
 # Initialize Gemini
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])  # API key uit secrets
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 def get_translations(language):
     translations = {
@@ -20,9 +20,7 @@ def get_translations(language):
             "input_option": "Manual input",
             "progress_message": "Generating descriptions... Please wait...",
             "result_label": "Generated description",
-            "token_usage": "Tokens Used",
             "model_label": "Choose AI Model",
-            "temperature_label": "Set AI Creativity (Temperature)",
             "output_label": "Generated Descriptions Preview",
             "upload_prompt_label": "Upload a prompt file (TXT)",
             "load_last_prompt": "Load last used prompt",
@@ -40,9 +38,7 @@ def get_translations(language):
             "input_option": "Handmatige invoer",
             "progress_message": "Beschrijvingen worden gegenereerd... Even geduld...",
             "result_label": "Gegenereerde beschrijving",
-            "token_usage": "Gebruikte tokens",
             "model_label": "Kies AI-model",
-            "temperature_label": "Stel AI Creativiteit in (Temperature)",
             "output_label": "Gegenereerde Beschrijvingen Voorbeeld",
             "upload_prompt_label": "Upload een promptbestand (TXT)",
             "load_last_prompt": "Laad laatst gebruikte prompt",
@@ -68,12 +64,12 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])  # Removed OpenAI.
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])
 
 # Gemini models
-gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]  # Changed to 1.5 versions.
+gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
 model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
-temperature = 1.0  # Gemini has no temperature parameter in the same way as OpenAI.
+temperature = 1.0
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -111,7 +107,7 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = response.text
-        return description, 0  # Removed the token count.
+        return description, 0
 
 # Manual input section
 if input_method == text["input_option"]:
@@ -153,7 +149,7 @@ if input_method == text["file_option"]:
                 for description in results:
                     st.markdown(f"***\n{convert_html_to_markdown(description)}")
 
-                csv = df.to_csv(index=False).encode('utf-8')
+                csv = df.to_csv(index=False, encoding='utf-8', encoding_errors='replace').encode('utf-8') # Added encoding errors
                 st.download_button(
                     label=text["download_button"],
                     data=csv,
