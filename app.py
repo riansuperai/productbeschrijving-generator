@@ -114,7 +114,7 @@ if input_method == text["input_option"]:
         product_details = dict(zip(["Productdetails"], [manual_input]))
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
-        st.markdown(description) #removed convert_html_to_markdown
+        st.markdown(description)
 
 # File upload
 if input_method == text["file_option"]:
@@ -137,8 +137,12 @@ if input_method == text["file_option"]:
 
             for index, row in df.iterrows():
                 product_details = dict(row)
-                description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
-                results.append(description)
+                try:
+                    description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
+                    results.append(description)
+                except Exception as e:
+                    st.error(f"Fout bij rij {index + 1}: {e}")
+                    results.append(f"Fout bij genereren van beschrijving voor rij {index + 1}.")
                 progress_bar.progress((index + 1) / total_rows)
 
             df["Generated Description"] = results
@@ -147,7 +151,7 @@ if input_method == text["file_option"]:
             # Display generated descriptions in markdown format
             st.subheader(text["output_label"])
             for desc in results:
-                st.markdown(desc) #removed convert_html_to_markdown.
+                st.markdown(desc)
 
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
