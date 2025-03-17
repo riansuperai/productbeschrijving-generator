@@ -148,10 +148,13 @@ if input_method == text["file_option"]:
             df["Generated Description"] = results
             st.dataframe(df)
 
-            # Display generated descriptions in markdown format
+            # Display generated descriptions in markdown format (only first 10)
             st.subheader(text["output_label"])
-            for desc in results:
-                st.markdown(desc)
+            for i, desc in enumerate(results):
+                if i < 10:
+                    st.markdown(desc)
+                else:
+                    break
 
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
