@@ -2,9 +2,13 @@ import streamlit as st
 import pandas as pd
 import html
 import google.generativeai as genai
+import openai
 
 # Initialize Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+# Initialize OpenAI
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def get_translations(language):
     translations = {
@@ -61,6 +65,21 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         response = model.generate_content(prompt)
         description = clean_text(response.text)
         return description, 0
+    elif ai_platform == "OpenAI":
+        try:
+            response = openai.chat.completions.create(
+                model=model_choice,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=temperature
+            )
+            description = clean_text(response.choices[0].message.content)
+            tokens_used = response.usage.total_tokens
+            return description, tokens_used
+        except Exception as e:
+            st.error(f"Fout bij OpenAI: {e}")
+            return f"Fout bij genereren van beschrijving: {e}", 0
 
 # Load last used prompt
 if "last_prompt" not in st.session_state:
@@ -73,10 +92,16 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])
-gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
-model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
-temperature = 1.0
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini", "OpenAI"])
+
+if ai_platform == "Gemini":
+    gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
+    model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
+elif ai_platform == "OpenAI":
+    openai_models = ["gpt-3.5-turbo", "gpt-4"]
+    model_choice = st.sidebar.selectbox(text["model_label"], openai_models)
+
+temperature = st.sidebar.slider(text["temperature_label"], 0.0, 2.0, 1.0)
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -115,6 +140,8 @@ if input_method == text["input_option"]:
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
         st.markdown(description)
+        if tokens_used:
+            st.write(f"{text['token_usage']}: {tokens_used}")
 
 # File upload
 if input_method == text["file_option"]:
@@ -134,12 +161,14 @@ if input_method == text["file_option"]:
             results = []
             total_rows = len(df)
             progress_bar = st.progress(0)
+            total_tokens = 0
 
             for index, row in df.iterrows():
                 product_details = dict(row)
                 try:
                     description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
                     results.append(description)
+                    total_tokens += tokens_used
                 except Exception as e:
                     st.error(f"Fout bij rij {index + 1}: {e}")
                     results.append(f"Fout bij genereren van beschrijving voor rij {index + 1}.")
@@ -148,18 +177,4 @@ if input_method == text["file_option"]:
             df["Generated Description"] = results
             st.dataframe(df)
 
-            # Display generated descriptions in markdown format (only first 10)
-            st.subheader(text["output_label"])
-            for i, desc in enumerate(results):
-                if i < 10:
-                    st.markdown(desc)
-                else:
-                    break
-
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label=text["download_button"],
-                data=csv,
-                file_name='generated_descriptions.csv',
-                mime='text/csv',
-            )
+            # Display generated descriptions in markdown format (only first
