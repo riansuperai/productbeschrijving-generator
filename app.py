@@ -2,13 +2,13 @@ import streamlit as st
 import pandas as pd
 import html
 import google.generativeai as genai
-import openai  # Import the OpenAI library
+from openai import OpenAI  # Import the new OpenAI client
 
 # Initialize Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # Initialize OpenAI
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # Use the new OpenAI client
 
 def get_translations(language):
     translations = {
@@ -66,7 +66,7 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         description = clean_text(response.text)
         return description, 0
     elif ai_platform == "OpenAI":
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=model_choice,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -74,8 +74,8 @@ def generate_description(product_details, user_prompt, output_language, style_ch
             ],
             temperature=temperature
         )
-        description = clean_text(response['choices'][0]['message']['content'])
-        tokens_used = response['usage']['total_tokens']
+        description = clean_text(response.choices[0].message.content)
+        tokens_used = response.usage.total_tokens
         return description, tokens_used
 
 # Load last used prompt
