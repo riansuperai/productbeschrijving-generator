@@ -68,12 +68,13 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         return description, 0
     
     elif ai_platform == "OpenAI":
-        response = openai.chat_completions.create(
+        response = openai.ChatCompletion.create(
             model=model_choice,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "system", "content": "You are a helpful AI assistant."},
+                      {"role": "user", "content": prompt}],
             temperature=temperature
         )
-        description = clean_text(response.choices[0].message.content)
+        description = clean_text(response["choices"][0]["message"]["content"])
         return description, 0
 
 # Load last used prompt
@@ -92,13 +93,8 @@ ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini", "OpenAI"])
 # AI Model selection
 gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
 openai_models = ["gpt-4", "gpt-3.5-turbo"]
-
-if ai_platform == "Gemini":
-    model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
-elif ai_platform == "OpenAI":
-    model_choice = st.sidebar.selectbox(text["model_label"], openai_models)
-
-temperature = 1.0
+model_choice = st.sidebar.selectbox(text["model_label"], gemini_models if ai_platform == "Gemini" else openai_models)
+temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.5, 1.0, 0.1)
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
@@ -136,7 +132,4 @@ if input_method == text["input_option"]:
         product_details = dict(zip(["Productdetails"], [manual_input]))
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
-        
         st.markdown(description, unsafe_allow_html=True)
-        st.subheader("HTML Preview")
-        st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(description)}</div>", height=200, scrolling=True)
