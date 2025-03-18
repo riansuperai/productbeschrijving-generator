@@ -2,9 +2,13 @@ import streamlit as st
 import pandas as pd
 import html
 import google.generativeai as genai
+import openai  # Import OpenAI
 
 # Initialize Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+# Initialize OpenAI
+openai.api_key = st.secrets["OPENAI_API_KEY"]  # Add OpenAI API key to secrets
 
 def get_translations(language):
     translations = {
@@ -56,11 +60,22 @@ def clean_text(text):
 
 def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform):
     prompt = f"{user_prompt}\n\nProductdetails: {product_details}\n\nOutput language: {output_language}\nStyle: {style_choice}"
+    
     if ai_platform == "Gemini":
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = clean_text(response.text)
         return description, 0
+    
+    elif ai_platform == "OpenAI":
+        response = openai.Completion.create(
+            engine=model_choice,
+            prompt=prompt,
+            max_tokens=150,
+            temperature=temperature
+        )
+        description = clean_text(response.choices[0].text.strip())
+        return description, response.usage['total_tokens']
 
 # Load last used prompt
 if "last_prompt" not in st.session_state:
@@ -73,10 +88,11 @@ text = get_translations(language)
 st.title(text["title"])
 
 # AI Model selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini", "OpenAI"])  # Add OpenAI option
 gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
-model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
-temperature = 1.0
+openai_models = ["text-davinci-003", "text-curie-001", "text-babbage-001", "text-ada-001"]  # Add OpenAI models
+model_choice = st.sidebar.selectbox(text["model_label"], gemini_models + openai_models if ai_platform == "OpenAI" else gemini_models)
+temperature = st.sidebar.slider(text["temperature_label"], min_value=0.0, max_value=1.0, value=1.0, step=0.1)
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
