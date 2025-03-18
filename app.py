@@ -114,10 +114,13 @@ if input_method == text["input_option"]:
         product_details = dict(zip(["Productdetails"], [manual_input]))
         with st.spinner(text["progress_message"]):
             description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
-        st.markdown(description)
+        
+        # Display Markdown output
+        st.markdown(description, unsafe_allow_html=True)
+
         # Display HTML preview
         st.subheader("HTML Preview")
-        st.components.v1.html(f"<div>{description}</div>", height=200, scrolling=True)
+        st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(description)}</div>", height=200, scrolling=True)
 
 # File upload
 if input_method == text["file_option"]:
@@ -155,9 +158,9 @@ if input_method == text["file_option"]:
             st.subheader(text["output_label"])
             for i, desc in enumerate(results):
                 if i < 10:
-                    st.markdown(desc)
+                    st.markdown(desc, unsafe_allow_html=True)
                     # Display HTML preview
-                    st.components.v1.html(f"<div>{desc}</div>", height=200, scrolling=True)
+                    st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(desc)}</div>", height=200, scrolling=True)
                 else:
                     break
 
