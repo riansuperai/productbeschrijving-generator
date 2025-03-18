@@ -99,6 +99,19 @@ temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.5, 1.0, 0.1)
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
 
+# File upload
+uploaded_file = st.file_uploader(text["upload_label"], type=["csv", "xlsx"])
+if uploaded_file is not None:
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
+        st.write("### Uploaded File Preview:")
+        st.dataframe(df)
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+
 # Prompt upload
 uploaded_prompt = st.file_uploader(text["upload_prompt_label"], type=["txt"])
 if uploaded_prompt is not None:
