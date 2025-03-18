@@ -135,11 +135,17 @@ if input_method == text["file_option"]:
             total_rows = len(df)
             progress_bar = st.progress(0)
 
+            # Create a placeholder for the markdown display
+            markdown_placeholder = st.empty()
+
             for index, row in df.iterrows():
                 product_details = dict(row)
                 try:
                     description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
                     results.append(description)
+                    # Update markdown display with each generated description
+                    markdown_content = "\n".join(results[:10]) #show only the first 10 results
+                    markdown_placeholder.markdown(markdown_content)
                 except Exception as e:
                     st.error(f"Fout bij rij {index + 1}: {e}")
                     results.append(f"Fout bij genereren van beschrijving voor rij {index + 1}.")
@@ -150,11 +156,7 @@ if input_method == text["file_option"]:
 
             # Display generated descriptions in markdown format (only first 10)
             st.subheader(text["output_label"])
-            for i, desc in enumerate(results):
-                if i < 10:
-                    st.markdown(desc)
-                else:
-                    break
+            # The markdown is already displayed live, no need to display it again.
 
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
