@@ -2,13 +2,9 @@ import streamlit as st
 import pandas as pd
 import html
 import google.generativeai as genai
-import openai
 
 # Initialize Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-
-# Initialize OpenAI
-openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def get_translations(language):
     translations = {
@@ -60,21 +56,10 @@ def clean_text(text):
 
 def generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform):
     prompt = f"{user_prompt}\n\nProductdetails: {product_details}\n\nOutput language: {output_language}\nStyle: {style_choice}"
-    
     if ai_platform == "Gemini":
         model = genai.GenerativeModel(model_choice)
         response = model.generate_content(prompt)
         description = clean_text(response.text)
-        return description, 0
-    
-    elif ai_platform == "OpenAI":
-        response = openai.ChatCompletion.create(
-            model=model_choice,
-            messages=[{"role": "system", "content": "You are a helpful AI assistant."},
-                      {"role": "user", "content": prompt}],
-            temperature=temperature
-        )
-        description = clean_text(response["choices"][0]["message"]["content"])
         return description, 0
 
 # Load last used prompt
@@ -87,36 +72,102 @@ text = get_translations(language)
 
 st.title(text["title"])
 
-# AI Platform selection
-ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini", "OpenAI"])
-
 # AI Model selection
+ai_platform = st.sidebar.selectbox("Choose AI Platform", ["Gemini"])
 gemini_models = ["gemini-1.5-pro", "gemini-1.5-flash"]
-openai_models = ["gpt-4", "gpt-3.5-turbo"]
-model_choice = st.sidebar.selectbox(text["model_label"], gemini_models if ai_platform == "Gemini" else openai_models)
-temperature = st.sidebar.slider(text["temperature_label"], 0.0, 1.5, 1.0, 0.1)
+model_choice = st.sidebar.selectbox(text["model_label"], gemini_models)
+temperature = 1.0
 
 # Choose input method
 input_method = st.radio("", [text["file_option"], text["input_option"]])
 
-# File upload
-uploaded_file = st.file_uploader(text["upload_label"], type=["csv", "xlsx"])
-if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-        st.write("### Uploaded File Preview:")
-        st.dataframe(df)
+# Prompt upload
+uploaded_prompt = st.file_uploader(text["upload_prompt_label"], type=["txt"])
+if uploaded_prompt is not None:
+    st.session_state.last_prompt = uploaded_prompt.read().decode("utf-8")
+
+# Prompt invoeren
+user_prompt = st.text_area(text["prompt_label"], value=st.session_state.last_prompt)
+
+# Load last used prompt
+if st.button(text["load_last_prompt"]):
+    st.session_state.last_prompt = user_prompt
+
+# Output language selection
+output_language = st.selectbox(text["language_label"], ["Nederlands", "English"])
+
+# Style selection
+style_options = [
+    "Persoonlijk en vriendelijk",
+    "Urgent en dringend",
+    "Eigenzinnig en gedurfd",
+    "Informatief en servicegericht",
+    "Humoristisch",
+    "Overtuigend"
+]
+style_choice = st.selectbox(text["style_label"], style_options)
+
+# Manual input section
+if input_method == text["input_option"]:
+    manual_input = st.text_area(text["manual_input_label"])
+    if st.button(text["generate_button"]) and manual_input:
+        product_details = dict(zip(["Productdetails"], [manual_input]))
+        with st.spinner(text["progress_message"]):
+            description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
         
-        if st.button(text["generate_button"]):
-            product_details = df.to_dict(orient="records")
-            with st.spinner(text["progress_message"]):
-                descriptions = [generate_description(pd, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)[0] for pd in product_details]
-            
-            df["Generated Description"] = descriptions
-            st.write("### Generated Descriptions:")
+        # Display Markdown output
+        st.markdown(description, unsafe_allow_html=True)
+
+        # Display HTML preview
+        st.subheader("HTML Preview")
+        st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(description)}</div>", height=200, scrolling=True)
+
+# File upload
+if input_method == text["file_option"]:
+    uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
+
+    if uploaded_file:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file, encoding='utf-8', on_bad_lines='skip')
+            else:
+                df = pd.read_excel(uploaded_file)
+        except Exception as e:
+            st.error(f"Fout bij het inlezen van het bestand: {e}")
+            df = None
+
+        if df is not None and st.button(text["generate_button"]):
+            results = []
+            total_rows = len(df)
+            progress_bar = st.progress(0)
+
+            for index, row in df.iterrows():
+                product_details = dict(row)
+                try:
+                    description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
+                    results.append(description)
+                except Exception as e:
+                    st.error(f"Fout bij rij {index + 1}: {e}")
+                    results.append(f"Fout bij genereren van beschrijving voor rij {index + 1}.")
+                progress_bar.progress((index + 1) / total_rows)
+
+            df["Generated Description"] = results
             st.dataframe(df)
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
+
+            # Display generated descriptions in markdown format (only first 10)
+            st.subheader(text["output_label"])
+            for i, desc in enumerate(results):
+                if i < 10:
+                    st.markdown(desc, unsafe_allow_html=True)
+                    # Display HTML preview
+                    st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(desc)}</div>", height=200, scrolling=True)
+                else:
+                    break
+
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label=text["download_button"],
+                data=csv,
+                file_name='generated_descriptions.csv',
+                mime='text/csv',
+            )
