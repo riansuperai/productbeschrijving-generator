@@ -68,12 +68,12 @@ def generate_description(product_details, user_prompt, output_language, style_ch
         return description, 0
     
     elif ai_platform == "OpenAI":
-        response = openai.ChatCompletion.create(
+        response = openai.chat_completions.create(
             model=model_choice,
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature
         )
-        description = clean_text(response["choices"][0]["message"]["content"])
+        description = clean_text(response.choices[0].message.content)
         return description, 0
 
 # Load last used prompt
@@ -140,23 +140,3 @@ if input_method == text["input_option"]:
         st.markdown(description, unsafe_allow_html=True)
         st.subheader("HTML Preview")
         st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(description)}</div>", height=200, scrolling=True)
-
-# File upload
-if input_method == text["file_option"]:
-    uploaded_file = st.file_uploader(text["upload_label"], type=["xlsx", "xls", "csv"])
-    if uploaded_file:
-        try:
-            df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
-        except Exception as e:
-            st.error(f"Fout bij het inlezen van het bestand: {e}")
-            df = None
-
-        if df is not None and st.button(text["generate_button"]):
-            results = []
-            for _, row in df.iterrows():
-                description, _ = generate_description(dict(row), user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
-                results.append(description)
-            df["Generated Description"] = results
-            st.dataframe(df)
-            csv = df.to_csv(index=False).encode("utf-8")
-            st.download_button(text["download_button"], csv, "generated_descriptions.csv", "text/csv")
