@@ -159,39 +159,44 @@ if input_method == text["file_option"]:
         if df is not None and st.button(text["generate_button"]):
             results = []
             total_rows = len(df)
-            progress_bar = st.progress(0)
 
-            for index, row in df.iterrows():
-                product_details = dict(row)
-                try:
-                    description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
-                    results.append(description)
-                except Exception as e:
-                    st.error(f"Fout bij rij {index + 1}: {e}")
-                    results.append(f"Fout bij genereren van beschrijving voor rij {index + 1}.")
-                
-                # Ensure progress value is between 0 and 1
-                progress_value = (index + 1) / total_rows
-                progress_value = max(0.0, min(1.0, progress_value))  # Clamp value between 0 and 1
-                progress_bar.progress(progress_value)
+            # Controleer of het bestand rijen bevat
+            if total_rows > 0:
+                progress_bar = st.progress(0)
 
-            df["Generated Description"] = results
-            st.dataframe(df)
+                for index, row in df.iterrows():
+                    product_details = dict(row)
+                    try:
+                        description, tokens_used = generate_description(product_details, user_prompt, output_language, style_choice, model_choice, temperature, ai_platform)
+                        results.append(description)
+                    except Exception as e:
+                        st.error(f"Fout bij rij {index + 1}: {e}")
+                        results.append(f"Fout bij genereren van beschrijving voor rij {index + 1}.")
+                    
+                    # Update progress bar
+                    progress_value = (index + 1) / total_rows
+                    progress_value = max(0.0, min(1.0, progress_value))  # Zorg ervoor dat de waarde tussen 0 en 1 blijft
+                    progress_bar.progress(progress_value)
 
-            # Display generated descriptions in markdown format (only first 10)
-            st.subheader(text["output_label"])
-            for i, desc in enumerate(results):
-                if i < 10:
-                    st.markdown(desc, unsafe_allow_html=True)
-                    # Display HTML preview
-                    st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(desc)}</div>", height=200, scrolling=True)
-                else:
-                    break
+                df["Generated Description"] = results
+                st.dataframe(df)
 
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label=text["download_button"],
-                data=csv,
-                file_name='generated_descriptions.csv',
-                mime='text/csv',
-            )
+                # Display generated descriptions in markdown format (only first 10)
+                st.subheader(text["output_label"])
+                for i, desc in enumerate(results):
+                    if i < 10:
+                        st.markdown(desc, unsafe_allow_html=True)
+                        # Display HTML preview
+                        st.components.v1.html(f"<div style='padding:10px; border:1px solid #ddd; background:#f9f9f9;'>{html.escape(desc)}</div>", height=200, scrolling=True)
+                    else:
+                        break
+
+                csv = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=text["download_button"],
+                    data=csv,
+                    file_name='generated_descriptions.csv',
+                    mime='text/csv',
+                )
+            else:
+                st.error("Het geüploade bestand bevat geen rijen of is leeg.")
